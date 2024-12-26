@@ -61,7 +61,7 @@ public class CartService implements CartServiceInterface{
     public Cart getCartItemsById(Long id) {
         log.info("Getting cart items by id");
         return Optional.of(cartRepository.findById(id)).get()
-                .orElseThrow(() -> new ProductNotFoundException("No Product available in this id", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new ProductNotFoundException("No Cart available in this cart id", HttpStatus.NOT_FOUND));
     }
 
     public Long generateCartProductId() {

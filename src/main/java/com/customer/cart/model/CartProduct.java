@@ -25,7 +25,6 @@ import java.math.BigDecimal;
 public class CartProduct implements Serializable {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long cartProductId;
 
     private String productName;
