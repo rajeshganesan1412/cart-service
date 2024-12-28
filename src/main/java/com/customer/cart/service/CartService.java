@@ -31,29 +31,56 @@ public class CartService implements CartServiceInterface{
 
     @Override
     @Transactional
-    public Cart addItemsToCart(Long id, Integer quantity) {
-        log.info("Adding items into cart");
+    public Cart addItemsToCart(Long id, Integer quantity, String userId) {
+         Cart cartForUser = cartRepository.findByUserId(userId);
         Product product = productServiceClient.getProductFromProductService(id);
-        List<CartProduct> cartProductList = cartProductRepository.saveAll(getCartProducts(quantity, product));
-        Cart cart = Cart.builder()
-                .cartProducts(cartProductList)
-                .build();
-        return cartRepository.save(cart);
+         if (cartForUser == null) {
+             List<CartProduct> newCartProductList = new ArrayList<>();
+             log.info("Adding items into cart");
+             CartProduct cartProduct = cartProductRepository.save(buildCartProduct(quantity, product));
+             newCartProductList.add(cartProduct);
+             Cart cart = Cart.builder()
+                     .userId(userId)
+                     .cartProducts(newCartProductList)
+                     .build();
+             return cartRepository.save(cart);
+         } else {
+             Optional<CartProduct> optionalCartProduct = cartForUser.getCartProducts().stream()
+                     .filter(cartProduct-> cartProduct.getCartProductId().equals(product.getId()))
+                     .findFirst();
+             CartProduct cartProduct;
+             if (optionalCartProduct.isPresent()) {
+                 cartProductRepository.save(buildCartProductFromAlreadyAvailableCartProduct(quantity, optionalCartProduct.get()));
+             } else {
+                 cartProduct = cartProductRepository.save(buildCartProduct(quantity, product));
+                 cartForUser.getCartProducts().add(cartProduct);
+             }
+             return cartRepository.save(cartForUser);
+         }
     }
 
-    private List<CartProduct> getCartProducts(Integer quantity, Product product) {
-        log.info("Getting cart products list");
-        List<CartProduct> cartProductList = new ArrayList<>();
-        CartProduct cartProduct = CartProduct.builder()
-                .cartProductId(generateCartProductId())
+    private CartProduct buildCartProduct(Integer quantity, Product product) {
+        log.info("Building cart product");
+       return CartProduct.builder()
+                .cartProductId(product.getId())
                 .productName(product.getProductName())
                 .description(product.getDescription())
                 .category(product.getCategory())
                 .quantity(quantity)
                 .price(product.getPrice())
                 .build();
-        cartProductList.add(cartProduct);
-        return cartProductList;
+    }
+
+    private CartProduct buildCartProductFromAlreadyAvailableCartProduct(Integer quantity, CartProduct product) {
+        log.info("Building cart product from already available cart");
+        return CartProduct.builder()
+                .cartProductId(product.getCartProductId())
+                .productName(product.getProductName())
+                .description(product.getDescription())
+                .category(product.getCategory())
+                .quantity(quantity + product.getQuantity())
+                .price(product.getPrice())
+                .build();
     }
 
 

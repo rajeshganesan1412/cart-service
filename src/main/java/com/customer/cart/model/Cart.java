@@ -14,6 +14,7 @@ import lombok.Setter;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -27,8 +28,9 @@ public class Cart implements Serializable {
     @GeneratedValue
     private Long cartId;
 
+    private String userId;
+
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "cart_id")
     private List<CartProduct> cartProducts;
-
 }
