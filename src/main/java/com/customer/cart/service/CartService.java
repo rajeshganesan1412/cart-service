@@ -2,6 +2,7 @@ package com.customer.cart.service;
 
 import com.customer.cart.client.ProductServiceClient;
 import com.customer.cart.exception.ProductNotFoundException;
+import com.customer.cart.exception.ProductQuantityOverflowException;
 import com.customer.cart.model.Cart;
 import com.customer.cart.model.CartProduct;
 import com.customer.cart.model.Product;
@@ -34,29 +35,34 @@ public class CartService implements CartServiceInterface{
     public Cart addItemsToCart(Long id, Integer quantity, String userId) {
          Cart cartForUser = cartRepository.findByUserId(userId);
         Product product = productServiceClient.getProductFromProductService(id);
-         if (cartForUser == null) {
-             List<CartProduct> newCartProductList = new ArrayList<>();
-             log.info("Adding items into cart");
-             CartProduct cartProduct = cartProductRepository.save(buildCartProduct(quantity, product));
-             newCartProductList.add(cartProduct);
-             Cart cart = Cart.builder()
-                     .userId(userId)
-                     .cartProducts(newCartProductList)
-                     .build();
-             return cartRepository.save(cart);
-         } else {
-             Optional<CartProduct> optionalCartProduct = cartForUser.getCartProducts().stream()
-                     .filter(cartProduct-> cartProduct.getCartProductId().equals(product.getId()))
-                     .findFirst();
-             CartProduct cartProduct;
-             if (optionalCartProduct.isPresent()) {
-                 cartProductRepository.save(buildCartProductFromAlreadyAvailableCartProduct(quantity, optionalCartProduct.get()));
-             } else {
-                 cartProduct = cartProductRepository.save(buildCartProduct(quantity, product));
-                 cartForUser.getCartProducts().add(cartProduct);
-             }
-             return cartRepository.save(cartForUser);
-         }
+        if (quantity != null && quantity <= product.getAvailableQuantity()) {
+            if (cartForUser == null) {
+                List<CartProduct> newCartProductList = new ArrayList<>();
+                log.info("Adding items into cart");
+                CartProduct cartProduct = cartProductRepository.save(buildCartProduct(quantity, product));
+                newCartProductList.add(cartProduct);
+                Cart cart = Cart.builder()
+                        .userId(userId)
+                        .cartProducts(newCartProductList)
+                        .build();
+                return cartRepository.save(cart);
+            } else {
+                Optional<CartProduct> optionalCartProduct = cartForUser.getCartProducts().stream()
+                        .filter(cartProduct-> cartProduct.getCartProductId().equals(product.getId()))
+                        .findFirst();
+                CartProduct cartProduct;
+                if (optionalCartProduct.isPresent()) {
+                    cartProductRepository.save(buildCartProductFromAlreadyAvailableCartProduct(quantity, optionalCartProduct.get()));
+                } else {
+                    cartProduct = cartProductRepository.save(buildCartProduct(quantity, product));
+                    cartForUser.getCartProducts().add(cartProduct);
+                }
+                return cartRepository.save(cartForUser);
+            }
+        } else {
+            throw new ProductQuantityOverflowException("Could not add item into cart. Only "+product.getAvailableQuantity()+" is available. Please select less quantity than available quantity", HttpStatus.NOT_FOUND);
+        }
+
     }
 
     public void deleteCartByCartId(Long cartId) {

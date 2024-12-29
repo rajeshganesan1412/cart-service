@@ -14,6 +14,21 @@ public class ProductExceptionHandler {
         String path =  request.getDescription(false);
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponseBuilder(path, ex.getHttpStatus(), ex.getErrorMessage()));
     }
+    @ExceptionHandler(CartNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handlePCartNotFoundException(CartNotFoundException ex, WebRequest request) {
+        String path =  request.getDescription(false);
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponseBuilder(path, ex.getHttpStatus(), ex.getErrorMessage()));
+    }
+    @ExceptionHandler(ClientConnectionException.class)
+    public ResponseEntity<ErrorResponse> handleClientConnectionException(ClientConnectionException ex, WebRequest request) {
+        String path =  request.getDescription(false);
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponseBuilder(path, HttpStatus.valueOf(ex.getHttpStatus().value()), ex.getErrorMessage()));
+    }
+    @ExceptionHandler(ProductQuantityOverflowException.class)
+    public ResponseEntity<ErrorResponse> handlePProductQuantityOverflowException(ProductQuantityOverflowException ex, WebRequest request) {
+        String path =  request.getDescription(false);
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponseBuilder(path, ex.getHttpStatus(), ex.getErrorMessage()));
+    }
     private ErrorResponse errorResponseBuilder(String url, HttpStatus httpCode, String errorMessage) {
         return ErrorResponse.builder().httpStatus(httpCode.toString()).url(url).errorMessage(errorMessage).build();
     }
