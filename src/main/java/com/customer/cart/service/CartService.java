@@ -59,6 +59,9 @@ public class CartService implements CartServiceInterface{
          }
     }
 
+    public void deleteCartByCartId(Long cartId) {
+        cartRepository.deleteById(cartId);
+    }
     private CartProduct buildCartProduct(Integer quantity, Product product) {
         log.info("Building cart product");
        return CartProduct.builder()
